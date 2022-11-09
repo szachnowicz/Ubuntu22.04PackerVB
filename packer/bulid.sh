@@ -1,3 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-echo "pozdro"
+PACKER_LOG=1 packer build -force "./"
+
+echo -e "\e Done!"

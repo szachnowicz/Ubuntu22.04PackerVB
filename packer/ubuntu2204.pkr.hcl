@@ -1,42 +1,44 @@
-source "virtualbox-iso" "jammy-daily" {
-  // Docs: https://www.packer.io/plugins/builders/vmware/iso
-
-  // VM Info:
-  vm_name       = "jammy-2022-04-17"
-  guest_additions_mode    = "disable"
-  guest_os_type           = "Ubuntu_64"
-  disk_size     = 20000
-  http_port_max = 9200
-  http_port_min = 9001
-  vboxmanage    = [
-    ["modifyvm", "{{ .Name }}", "--memory", "4096"],
-    ["modifyvm", "{{ .Name }}", "--cpus", "2"]
-  ]
-
-  iso_checksum = "sha256:c396e956a9f52c418397867d1ea5c0cf1a99a49dcf648b086d2fb762330cc88d"
-  iso_urls = [
-    "file:/C:/packer/ubuntu22.04/ubuntu-22.04.1-desktop-amd64.iso",
-    "https://cdimage.ubuntu.com/ubuntu-server/daily-live/current/jammy-live-server-amd64.iso"]
-  output_directory  = "C:/packer/Ubuntu-22.04-Build"
-  http_directory    = "http"
-  ssh_username      = "vmadmin"
-  ssh_password      = "MyP@ssw0rd-22!"
-  ssh_timeout       = "200m"
-  shutdown_command  = "sudo shutdown -P now"
-
-
-  boot_wait = "5s"
+source "virtualbox-iso" "ubuntu2004" {
   boot_command = [
-    "c<wait>",
-    "linux /casper/vmlinuz --- autoinstall ds=\"nocloud-net;seedfrom=http://{{.HTTPIP}}:{{.HTTPPort}}/\"",
-    "<enter><wait>",
-    "initrd /casper/initrd",
-    "<enter><wait>",
-    "boot",
+    "<enter><wait><enter><wait><f6><esc>",
+    "autoinstall ds=nocloud-net;s=http://{{.HTTPIP}}:{{.HTTPPort}}/",
     "<enter>"
   ]
+  cd_label = "cidata"
+  boot_wait = "5s"
+  guest_os_type = "ubuntu-64"
+  iso_checksum = "sha256:10f19c5b2b8d6db711582e0e27f5116296c34fe4b313ba45f9b201a5007056cb"
+  iso_urls = [
+    "file:/C:/packer/ubuntu22.04/ubuntu-22.04.1-live-server-amd64.iso",
+    "https://cdimage.ubuntu.com/ubuntu-server/daily-live/current/jammy-live-server-amd64.iso"]
+  memory = 4096
+  disk_size = 64000
+  output_directory = "output-base"
+  output_filename = ".base.ubuntu2004"
+  shutdown_command = "echo 'ubuntu' | sudo shutdown -P now"
+  ssh_handshake_attempts = "1000"
+  ssh_password = "ubuntu"
+  ssh_pty = true
+  ssh_timeout = "30m"
+  ssh_username = "ubuntu"
+  http_directory = "http"
+  host_port_min = 2222
+  host_port_max = 2222
 }
 
 build {
-  sources = ["sources.virtualbox-iso.jammy-daily"]
+  name = "ubuntu2004"
+  sources = [
+    "source.virtualbox-iso.ubuntu2004"]
+
+  provisioner "shell" {
+    inline = [
+      "echo initial provisioning"]
+  }
+
+  post-processor "manifest" {
+    output = "base-manifest.json"
+  }
+
 }
+

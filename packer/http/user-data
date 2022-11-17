@@ -1,35 +1,47 @@
-#cloud-config - https://raw.githubusercontent.com/nickcharlton/packer-ubuntu-2004/master/http/user-data
+#cloud-config
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+# WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# Ubuntu Server 22.04 LTS
 autoinstall:
   version: 1
+  apt:
+    geoip: true
+    disable_components: []
+    preserve_sources_list: false
+    primary:
+      - arches: [amd64, i386]
+        uri: http://us.archive.ubuntu.com/ubuntu
+      - arches: [default]
+        uri: http://ports.ubuntu.com/ubuntu-ports
+  early-commands:
+    - sudo systemctl stop ssh
+  locale: en_US
+  keyboard:
+    layout: us
   identity:
-    hostname: ubuntu-server
-    password: '$6$qoazpFv0h6$1i0uxiM32aszgrgyYjv/2FLq73.TV2DCHOGi6nuiZoazu36Bewgb4hKarG9J3vwHxTpkdLQ10zeEt1J5XHG.Z/'
-    username: vagrant
-  storage:
-    layout:
-      name: direct
-  packages:
-    - ubuntu-server
-    - bc
-    - curl
-    - wget
-    - uuid
-    - git
-    - build-essential
-  network:
-    network:
-      version: 2
-      ethernets:
-        enp0s3:
-          dhcp4: true
-          dhcp-identifier: mac
+      hostname: ubuntu
+      username: ubuntu
+      password: "$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0"
   ssh:
-    allow-pw: true
     install-server: true
+    allow-pw: true
+  packages:
+    - openssh-server
+    - open-vm-tools
+    - cloud-init
+    - whois
+    - zsh
+    - wget
+    - tasksel
+  user-data:
+    disable_root: false
+    timezone: UTC
   late-commands:
-    - sed -i 's/^#*\(send dhcp-client-identifier\).*$/\1 = hardware;/' /target/etc/dhcp/dhclient.conf
-  #  - 'sed -i "s/dhcp4: true/&\n      dhcp-identifier: mac/" /target/etc/netplan/00-installer-config.yaml'
-    - "echo 'Defaults:vagrant !requiretty' > /target/etc/sudoers.d/vagrant"
-    - "echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /target/etc/sudoers.d/vagrant"
-    - "chmod 440 /target/etc/sudoers.d/vagrant"
-    - 'echo "Port 2222" > /target/etc/ssh/sshd_config.d/packer-init.conf'
+    - sed -i -e 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/g' /target/etc/ssh/sshd_config
+    - echo 'vmadmin ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/vmadmin
+    - curtin in-target --target=/target -- chmod 440 /etc/sudoers.d/vmadmin
+    - "lvresize -v -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv"
+    - "resize2fs -p /dev/mapper/ubuntu--vg-ubuntu--lv"
